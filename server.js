@@ -1,28 +1,41 @@
 const express = require('express');
 const cors = require('cors');
 const { exec } = require('child_process');
-const http = require('http');
-const { Server } = require('socket.io');
 
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
+app.use(express.json());
 
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
-});
+const allowedCommands = [
+    'ls',
+    'mkdir',
+    'rm',
+    'apt update',
+    'apt upgrade',
+    'apt install'
+];
 
-io.on('connection', (socket) => {
-    socket.on('command', (cmd) => {
-        exec(cmd, (error, stdout, stderr) => {
-            const output = error ? stderr : stdout;
-            socket.emit('output', output);
-        });
+app.post('/execute', (req, res) => {
+    const command = req.body.command;
+
+    // Check if command is allowed
+    if (!allowedCommands.some(cmd => command.startsWith(cmd))) {
+        return res.status(403).send('Command not allowed');
+    }
+
+    exec(command, (error, stdout, stderr) => {
+        if (error) {
+            return res.status(500).send(`Error: ${error.message}`);
+        }
+        if (stderr) {
+            return res.status(500).send(`Stderr: ${stderr}`);
+        }
+        res.send(stdout);
     });
 });
 
-server.listen(3000, () => {
-    console.log('Server is running on http://localhost:3000');
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
 });
