@@ -9,10 +9,11 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-app.use(express.static(path.join(__dirname, '/'))); // Serve static files from the root
+// Serve static files from the root directory
+app.use(express.static(path.join(__dirname, '/')));
 
 const allowedCommands = [
-    'ls', 'pwd', 'whoami', 'date', 'echo', 
+    'ls', 'pwd', 'whoami', 'date', 'echo',
     'apt update', 'apt upgrade', 'apt install',
     // Add more commands as necessary
 ];
@@ -28,7 +29,7 @@ io.on('connection', (socket) => {
         if (isValidCommand(cmd)) {
             exec(cmd, { shell: '/bin/bash' }, (error, stdout, stderr) => {
                 const output = error ? stderr : stdout;
-                socket.emit('output', output || ''); // Emit output or empty string
+                socket.emit('output', output.trim() || ''); // Emit trimmed output
             });
         } else {
             socket.emit('output', 'Command not allowed');
