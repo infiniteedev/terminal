@@ -9,23 +9,20 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 app.use(cors());
-app.use(express.static('.')); // Serve static files from the root
 
-// Handle command execution
+app.get('/', (req, res) => {
+    res.sendFile(__dirname + '/index.html');
+});
+
 io.on('connection', (socket) => {
-    socket.on('execute-command', (command) => {
-        exec(command, (error, stdout, stderr) => {
-            if (error) {
-                socket.emit('command-response', `Error: ${stderr || error.message}`);
-            } else {
-                socket.emit('command-response', stdout);
-            }
+    socket.on('command', (cmd) => {
+        exec(cmd, (error, stdout, stderr) => {
+            const output = error ? stderr : stdout;
+            socket.emit('output', output);
         });
     });
 });
 
-// Start the server
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+server.listen(3000, () => {
+    console.log('Server is running on http://localhost:3000');
 });
