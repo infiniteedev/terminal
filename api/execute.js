@@ -1,40 +1,32 @@
-const input = document.getElementById('commandInput');
-const terminal = document.getElementById('terminal');
+const { exec } = require('child_process');
 
-input.addEventListener('keypress', async function(e) {
-    if (e.key === 'Enter') {
-        const command = input.value;
-        const newLine = document.createElement('div');
-        newLine.textContent = 'user@infiniteedev -$ ' + command;
-        terminal.insertBefore(newLine, terminal.querySelector('.terminal-input'));
-        input.value = '';
+export default function handler(req, res) {
+    if (req.method === 'POST') {
+        const command = req.body.command.trim(); // Trim any whitespace
 
-        // Send command to the server
-        try {
-            const response = await fetch('/api/execute', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ command })
-            });
+        // Define allowed commands
+        const allowedCommands = ['ls', 'mkdir', 'rm', 'echo', 'clear'];
 
-            const result = await response.text();
-            const outputLine = document.createElement('div');
-            outputLine.textContent = result;
-            terminal.insertBefore(outputLine, terminal.querySelector('.terminal-input'));
-
-            // If command is 'clear', clear the terminal display
-            if (command.trim() === 'clear') {
-                // Clear the entire terminal content except the prompt
-                terminal.innerHTML = '';
-                terminal.appendChild(document.createElement('div')).textContent = 'user@infiniteedev -$ ';
-                input.focus(); // Keep focus on input
-            }
-        } catch (error) {
-            const errorLine = document.createElement('div');
-            errorLine.textContent = 'Error executing command: ' + error.message;
-            terminal.insertBefore(errorLine, terminal.querySelector('.terminal-input'));
+        // Check if the command is allowed
+        const isAllowedCommand = allowedCommands.some(cmd => command.startsWith(cmd));
+        if (!isAllowedCommand) {
+            return res.status(403).send('Command not allowed');
         }
+
+        // Execute the command
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Error executing command: ${error.message}`);
+                return res.status(500).send(`Error: ${error.message}`);
+            }
+            if (stderr) {
+                console.error(`Stderr: ${stderr}`);
+                return res.status(500).send(`Stderr: ${stderr}`);
+            }
+            res.send(stdout);
+        });
+    } else {
+        res.setHeader('Allow', ['POST']);
+        res.status(405).end(`Method ${req.method} Not Allowed`);
     }
-});
+}
