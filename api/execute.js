@@ -31,11 +31,11 @@ export default function handler(req, res) {
                 return res.status(500).send(`Stderr: ${stderr}\nuser@infinitee -$ `);
             }
 
-            // Trim the output and remove any empty lines
-            const output = stdout.split('\n').map(line => line.trim()).filter(line => line).join('\n');
+            // Process output to remove unnecessary newlines
+            const output = stdout.replace(/\n{2,}/g, '\n').trim(); // Remove multiple newlines
+            const response = output ? output + '\nuser@infinitee -$ ' : 'user@infinitee -$ ';
 
-            // Send the output and append the prompt without extra newlines
-            res.send(output ? output + '\nuser@infinitee -$ ' : 'user@infinitee -$ ');
+            res.send(response);
         });
     } else {
         res.setHeader('Allow', ['POST']);
