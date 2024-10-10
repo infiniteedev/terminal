@@ -1,46 +1,40 @@
-const { exec } = require('child_process');
-const path = require('path');
-const fs = require('fs');
+const input = document.getElementById('commandInput');
+const terminal = document.getElementById('terminal');
 
-export default function handler(req, res) {
-    if (req.method === 'POST') {
-        const command = req.body.command;
+input.addEventListener('keypress', async function(e) {
+    if (e.key === 'Enter') {
+        const command = input.value;
+        const newLine = document.createElement('div');
+        newLine.textContent = 'user@infiniteedev -$ ' + command;
+        terminal.insertBefore(newLine, terminal.querySelector('.terminal-input'));
+        input.value = '';
 
-        const allowedCommands = [
-            'ls',
-            'mkdir',
-            'rm',
-            'echo',
-            'clear'
-        ];
+        // Send command to the server
+        try {
+            const response = await fetch('/api/execute', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ command })
+            });
 
-        // Prevent removing critical files and directories
-        const restrictedFiles = ['api', 'execute.js', 'package.json', 'index.html'];
-        const isRestricted = restrictedFiles.some(file => command.includes(file));
+            const result = await response.text();
+            const outputLine = document.createElement('div');
+            outputLine.textContent = result;
+            terminal.insertBefore(outputLine, terminal.querySelector('.terminal-input'));
 
-        if (isRestricted) {
-            return res.status(403).send('Command not allowed: you cannot delete critical files.');
-        }
-
-        if (!allowedCommands.some(cmd => command.startsWith(cmd))) {
-            return res.status(403).send('Command not allowed');
-        }
-
-        if (command === 'clear') {
-            return res.send(''); // Clear output
-        }
-
-        exec(command, (error, stdout, stderr) => {
-            if (error) {
-                return res.status(500).send(`Error: ${error.message}`);
+            // If command is 'clear', clear the terminal display
+            if (command.trim() === 'clear') {
+                // Clear the entire terminal content except the prompt
+                terminal.innerHTML = '';
+                terminal.appendChild(document.createElement('div')).textContent = 'user@infiniteedev -$ ';
+                input.focus(); // Keep focus on input
             }
-            if (stderr) {
-                return res.status(500).send(`Stderr: ${stderr}`);
-            }
-            res.send(stdout);
-        });
-    } else {
-        res.setHeader('Allow', ['POST']);
-        res.status(405).end(`Method ${req.method} Not Allowed`);
+        } catch (error) {
+            const errorLine = document.createElement('div');
+            errorLine.textContent = 'Error executing command: ' + error.message;
+            terminal.insertBefore(errorLine, terminal.querySelector('.terminal-input'));
+        }
     }
-}
+});
