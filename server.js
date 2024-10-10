@@ -1,49 +1,31 @@
 const express = require('express');
 const cors = require('cors');
 const { exec } = require('child_process');
+const http = require('http');
+const { Server } = require('socket.io');
+
 const app = express();
-const PORT = process.env.PORT || 3000;
+const server = http.createServer(app);
+const io = new Server(server);
 
 app.use(cors());
-app.use(express.json());
-
-// Allowed commands
-const allowedCommands = {
-    'ls': true,
-    'pwd': true,
-    'mkdir': true,
-    'rm': true,
-    'apt': true, // Allow 'apt' commands with care
-};
+app.use(express.static('.')); // Serve static files from the root
 
 // Handle command execution
-app.post('/execute', (req, res) => {
-    const command = req.body.command;
-    
-    // Simple command validation
-    const [cmd, ...args] = command.split(' ');
-    
-    if (!(cmd in allowedCommands)) {
-        return res.json({ output: `Command '${cmd}' is not allowed.` });
-    }
-
-    // Only allow specific apt commands
-    if (cmd === 'apt') {
-        const subCommand = args[0];
-        if (!['update', 'upgrade', 'install', 'remove'].includes(subCommand)) {
-            return res.json({ output: `apt command '${subCommand}' is not allowed.` });
-        }
-    }
-
-    exec(command, (error, stdout, stderr) => {
-        if (error) {
-            return res.json({ output: `Error: ${stderr || error.message}` });
-        }
-        res.json({ output: stdout });
+io.on('connection', (socket) => {
+    socket.on('execute-command', (command) => {
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                socket.emit('command-response', `Error: ${stderr || error.message}`);
+            } else {
+                socket.emit('command-response', stdout);
+            }
+        });
     });
 });
 
 // Start the server
-app.listen(PORT, () => {
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
