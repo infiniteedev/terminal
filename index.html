@@ -1,1 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Shell</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #1e1e1e;
+            color: #00ff00;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            padding: 20px;
+        }
+        #output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #00ff00;
+            background-color: #000;
+        }
+        input {
+            width: 100%;
+            color: #00ff00;
+            background: #1e1e1e;
+            border: none;
+            outline: none;
+            font-size: 16px;
+        }
+        .command {
+            font-weight: bold;
+        }
+        .prompt {
+            color: #00ff00;
+        }
+    </style>
+</head>
+<body>
+    <div id="output"></div>
+    <div class="prompt">user@vps:~$</div>
+    <input id="command" autofocus />
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const output = document.getElementById('output');
+        const commandInput = document.getElementById('command');
+
+        let commandHistory = [];
+        let historyIndex = -1;
+
+        commandInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                const cmd = commandInput.value;
+                commandHistory.push(cmd);
+                historyIndex = commandHistory.length;
+                output.innerHTML += `<div class="command">> ${cmd}</div>`;
+                socket.emit('command', cmd);
+                commandInput.value = '';
+            } else if (e.key === 'ArrowUp') {
+                if (historyIndex > 0) {
+                    historyIndex--;
+                    commandInput.value = commandHistory[historyIndex];
+                }
+            } else if (e.key === 'ArrowDown') {
+                if (historyIndex < commandHistory.length - 1) {
+                    historyIndex++;
+                    commandInput.value = commandHistory[historyIndex] || '';
+                }
+            }
+        });
+
+        socket.on('output', function (data) {
+            output.innerHTML += `<div>${data}</div>`;
+            output.scrollTop = output.scrollHeight; // Auto-scroll
+        });
+
+        commandInput.focus(); // Focus on input field
+    </script>
+</body>
+</html>
 
