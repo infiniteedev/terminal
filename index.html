@@ -20,7 +20,7 @@
         }
 
         #input {
-            width: 100%;
+            width: calc(100% - 20px); /* Adjust width to fit the prompt */
             background: transparent;
             border: none;
             color: #00ff00;
@@ -31,38 +31,39 @@
         #output {
             white-space: pre;
         }
+
+        .prompt {
+            display: inline;
+        }
     </style>
 </head>
 <body>
     <div class="terminal">
         <div id="output"></div>
-        <input type="text" id="input" autofocus />
+        <div>
+            <span class="prompt">user@infiniteedev -$ </span>
+            <input type="text" id="input" autofocus />
+        </div>
     </div>
     <script>
         const inputField = document.getElementById('input');
         const outputDiv = document.getElementById('output');
 
-        function addPrompt() {
-            outputDiv.innerHTML += 'user@infiniteedev -$ ';
-            inputField.value = '';
-        }
-
         inputField.addEventListener('keypress', (event) => {
             if (event.key === 'Enter') {
                 const command = inputField.value;
-                outputDiv.innerHTML += `${command}<br>`;
+                outputDiv.innerHTML += `user@infiniteedev -$ ${command}<br>`;
                 
                 // Simulate command execution
                 setTimeout(() => {
                     outputDiv.innerHTML += `Command '${command}' executed.<br>`;
-                    addPrompt();
                     outputDiv.scrollTop = outputDiv.scrollHeight; // Scroll to bottom
                 }, 500);
+                
+                // Clear input field for the next command
+                inputField.value = '';
             }
         });
-
-        // Initialize with prompt
-        addPrompt();
     </script>
 </body>
 </html>
