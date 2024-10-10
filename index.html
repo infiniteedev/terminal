@@ -3,73 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSH</title>
+    <title>Terminal Emulator</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            background-color: #000;
-            color: #fff; /* White text for commands */
-            font-family: 'Courier New', Courier, monospace;
             margin: 0;
-            height: 100vh;
+            background-color: #1e1e1e;
+            color: #33ff00;
+            font-family: 'Courier New', monospace;
         }
 
         .terminal {
             padding: 20px;
-            height: 100%;
+            height: 100vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #333;
+        }
+
+        .output {
+            white-space: pre;
+            flex-grow: 1;
             overflow-y: auto;
         }
 
         .input-container {
-            display: flex; /* Flexbox to align prompt and input */
-        }
-
-        #input {
-            width: 100%; /* Take full width available */
-            background: transparent;
-            border: none;
-            color: #fff; /* White text for input */
-            outline: none;
-            font-size: 16px;
-        }
-
-        #output {
-            white-space: pre;
-            margin-bottom: 10px; /* Space for new input line */
+            display: flex;
+            align-items: center;
         }
 
         .prompt {
-            color: #00bfff; /* Light blue color for the prompt */
-            margin-right: 5px; /* Space between prompt and input */
+            margin-right: 5px;
+        }
+
+        #input {
+            width: 100%;
+            background: none;
+            border: none;
+            color: #33ff00;
+            outline: none;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+        }
+
+        #input:focus {
+            outline: none;
+        }
+
+        .blinking {
+            border-right: 2px solid #33ff00;
         }
     </style>
 </head>
 <body>
-    <div class="terminal">
-        <div id="output"></div>
+    <div class="terminal" id="terminal">
+        <div class="output" id="output"></div>
         <div class="input-container">
-            <span class="prompt">user@infiniteedev -$</span>
+            <span class="prompt" id="prompt">$</span>
             <input type="text" id="input" autofocus />
         </div>
     </div>
+    <script src="/socket.io/socket.io.js"></script>
     <script>
+        const socket = io();
         const inputField = document.getElementById('input');
         const outputDiv = document.getElementById('output');
+        const prompt = document.getElementById('prompt');
 
-        inputField.addEventListener('keypress', (event) => {
+        inputField.addEventListener('keydown', function(event) {
             if (event.key === 'Enter') {
                 const command = inputField.value;
-                outputDiv.innerHTML += `<span class="prompt">user@infiniteedev -$</span> ${command}<br>`;
-                
-                // Simulate command execution
-                setTimeout(() => {
-                    outputDiv.innerHTML += `Command '${command}' executed.<br>`;
-                    outputDiv.scrollTop = outputDiv.scrollHeight; // Scroll to bottom
-                }, 500);
-                
-                // Clear input field for the next command
+                outputDiv.innerHTML += `<div class="command"><span class="prompt">$</span> ${command}</div>`;
                 inputField.value = '';
+                inputField.disabled = true; // Disable input while processing
+                socket.emit('command', command);
             }
         });
+
+        socket.on('output', function(data) {
+            outputDiv.innerHTML += `<div>${data}</div>`;
+            outputDiv.scrollTop = outputDiv.scrollHeight; // Auto scroll to the bottom
+            inputField.disabled = false; // Re-enable input
+            inputField.focus();
+        });
+
+        // Blinking cursor effect
+        setInterval(() => {
+            inputField.classList.toggle('blinking');
+        }, 500);
+    </script>
+    <script>
+        // Socket.io client connection (needs to be in a separate script tag)
+        const socket = io();
     </script>
 </body>
 </html>
