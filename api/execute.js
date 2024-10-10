@@ -31,7 +31,9 @@ export default function handler(req, res) {
                 return res.status(500).send(`Stderr: ${stderr}\nuser@infinitee -$ `);
             }
 
-            res.send(stdout.trim() + '\nuser@infinitee -$ '); // Append prompt without extra lines
+            // Filter out empty lines from the output
+            const output = stdout.split('\n').filter(line => line.trim() !== '').join('\n');
+            res.send(output + '\nuser@infinitee -$ '); // Append prompt
         });
     } else {
         res.setHeader('Allow', ['POST']);
