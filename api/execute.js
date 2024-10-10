@@ -1,5 +1,7 @@
 const { exec } = require('child_process');
 
+let outputHistory = [];
+
 export default function handler(req, res) {
     if (req.method === 'POST') {
         const command = req.body.command;
@@ -17,7 +19,8 @@ export default function handler(req, res) {
         }
 
         if (command === 'clear') {
-            return res.send(''); // Clear output
+            outputHistory = []; // Reset the output history
+            return res.send(''); // Optionally return an empty response
         }
 
         exec(command, (error, stdout, stderr) => {
@@ -27,6 +30,8 @@ export default function handler(req, res) {
             if (stderr) {
                 return res.status(500).send(`Stderr: ${stderr}`);
             }
+
+            outputHistory.push(stdout); // Store the output
             res.send(stdout);
         });
     } else {
