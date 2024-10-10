@@ -3,102 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terminal Emulator</title>
+    <title>InfiniteeDev Shell</title>
     <style>
-        * {
-            box-sizing: border-box;
-        }
-
         body {
             margin: 0;
+            padding: 0;
             background-color: #1e1e1e;
-            color: #33ff00;
-            font-family: 'Courier New', monospace;
-        }
-
-        .terminal {
-            padding: 20px;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             height: 100vh;
-            overflow-y: auto;
+        }
+        .terminal {
+            width: 90%;
+            height: 85vh;
+            margin: 20px;
+            border-radius: 20px;
+            background-color: #2d2d2d;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            border: 1px solid #333;
         }
-
-        .output {
-            white-space: pre;
-            flex-grow: 1;
-            overflow-y: auto;
-        }
-
-        .input-container {
+        .terminal-header {
             display: flex;
             align-items: center;
+            background-color: #3b3b3b;
+            padding: 15px;
+            border-bottom: 2px solid #444;
         }
-
-        .prompt {
-            margin-right: 5px;
+        .terminal-header .dot {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 10px;
         }
-
-        #input {
-            width: 100%;
+        .dot.red { background-color: #ff5f56; }
+        .dot.yellow { background-color: #ffbd2e; }
+        .dot.green { background-color: #27c93f; }
+        .terminal-content {
+            flex-grow: 1;
+            padding: 20px;
+            color: #d1d1d1;
+            font-size: 16px;
+            line-height: 1.8;
+            white-space: pre-line;
+            overflow-y: auto;
+        }
+        .terminal-input {
+            display: flex;
+            align-items: center;
+            color: #00ff00;
+        }
+        .terminal-input span {
+            margin-right: 8px;
+        }
+        .terminal-input input {
             background: none;
             border: none;
-            color: #33ff00;
+            color: #00ff00;
+            font-family: inherit;
+            font-size: inherit;
             outline: none;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
+            flex-grow: 1;
         }
-
-        #input:focus {
-            outline: none;
+        /* Scrollbar customization */
+        .terminal-content::-webkit-scrollbar {
+            width: 8px;
         }
-
-        .blinking {
-            border-right: 2px solid #33ff00;
+        .terminal-content::-webkit-scrollbar-thumb {
+            background-color: #444;
+            border-radius: 10px;
+        }
+        .terminal-content::-webkit-scrollbar-track {
+            background-color: #2d2d2d;
         }
     </style>
 </head>
 <body>
-    <div class="terminal" id="terminal">
-        <div class="output" id="output"></div>
-        <div class="input-container">
-            <span class="prompt" id="prompt">$</span>
-            <input type="text" id="input" autofocus />
+
+<div class="terminal">
+    <div class="terminal-header">
+        <div class="dot red"></div>
+        <div class="dot yellow"></div>
+        <div class="dot green"></div>
+    </div>
+    <div class="terminal-content" id="terminal">
+        <div class="terminal-input">
+            <span>user@infiniteedev -$</span><input type="text" id="commandInput" autofocus>
         </div>
     </div>
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        const inputField = document.getElementById('input');
-        const outputDiv = document.getElementById('output');
-        const prompt = document.getElementById('prompt');
+</div>
 
-        inputField.addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') {
-                const command = inputField.value;
-                outputDiv.innerHTML += `<div class="command"><span class="prompt">$</span> ${command}</div>`;
-                inputField.value = '';
-                inputField.disabled = true; // Disable input while processing
-                socket.emit('command', command);
+<script>
+    const input = document.getElementById('commandInput');
+    const terminal = document.getElementById('terminal');
+
+    input.addEventListener('keypress', async function(e) {
+        if (e.key === 'Enter') {
+            const command = input.value;
+            const newLine = document.createElement('div');
+            newLine.textContent = 'user@infiniteedev -$ ' + command;
+            terminal.insertBefore(newLine, terminal.querySelector('.terminal-input'));
+            input.value = '';
+
+            // Send command to the server
+            try {
+                const response = await fetch('http://localhost:3000/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ command })
+                });
+
+                const result = await response.text();
+                const outputLine = document.createElement('div');
+                outputLine.textContent = result;
+                terminal.insertBefore(outputLine, terminal.querySelector('.terminal-input'));
+            } catch (error) {
+                const errorLine = document.createElement('div');
+                errorLine.textContent = 'Error executing command: ' + error.message;
+                terminal.insertBefore(errorLine, terminal.querySelector('.terminal-input'));
             }
-        });
+        }
+    });
+</script>
 
-        socket.on('output', function(data) {
-            outputDiv.innerHTML += `<div>${data}</div>`;
-            outputDiv.scrollTop = outputDiv.scrollHeight; // Auto scroll to the bottom
-            inputField.disabled = false; // Re-enable input
-            inputField.focus();
-        });
-
-        // Blinking cursor effect
-        setInterval(() => {
-            inputField.classList.toggle('blinking');
-        }, 500);
-    </script>
-    <script>
-        // Socket.io client connection (needs to be in a separate script tag)
-        const socket = io();
-    </script>
 </body>
 </html>
