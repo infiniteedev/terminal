@@ -1,4 +1,6 @@
 const { exec } = require('child_process');
+const path = require('path');
+const fs = require('fs');
 
 export default function handler(req, res) {
     if (req.method === 'POST') {
@@ -8,11 +10,17 @@ export default function handler(req, res) {
             'ls',
             'mkdir',
             'rm',
-            'apt update',
-            'apt upgrade',
-            'apt install',
+            'echo',
             'clear'
         ];
+
+        // Prevent removing critical files and directories
+        const restrictedFiles = ['api', 'execute.js', 'package.json', 'index.html'];
+        const isRestricted = restrictedFiles.some(file => command.includes(file));
+
+        if (isRestricted) {
+            return res.status(403).send('Command not allowed: you cannot delete critical files.');
+        }
 
         if (!allowedCommands.some(cmd => command.startsWith(cmd))) {
             return res.status(403).send('Command not allowed');
