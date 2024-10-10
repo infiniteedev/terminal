@@ -7,7 +7,7 @@
     <style>
         body {
             background-color: #000;
-            color: #00ff00;
+            color: #fff; /* White text for commands */
             font-family: 'Courier New', Courier, monospace;
             margin: 0;
             height: 100vh;
@@ -23,9 +23,10 @@
             width: calc(100% - 20px); /* Adjust width to fit the prompt */
             background: transparent;
             border: none;
-            color: #00ff00;
+            color: #fff; /* White text for input */
             outline: none;
             font-size: 16px;
+            display: inline; /* Keep input inline */
         }
 
         #output {
@@ -33,6 +34,7 @@
         }
 
         .prompt {
+            color: #00f; /* Blue color for the prompt */
             display: inline;
         }
     </style>
@@ -52,7 +54,7 @@
         inputField.addEventListener('keypress', (event) => {
             if (event.key === 'Enter') {
                 const command = inputField.value;
-                outputDiv.innerHTML += `user@infiniteedev -$ ${command}<br>`;
+                outputDiv.innerHTML += `<span class="prompt">user@infiniteedev -$ </span>${command}<br>`;
                 
                 // Simulate command execution
                 setTimeout(() => {
