@@ -3,55 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Shell</title>
+    <title>SSH Terminal</title>
     <style>
         body {
             background-color: #000;
             color: #00ff00;
-            font-family: monospace;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            height: 100vh;
+        }
+
+        .terminal {
             padding: 20px;
-        }
-        #terminal {
-            height: 300px;
+            height: 100%;
             overflow-y: auto;
-            border: 1px solid #00ff00;
-            padding: 10px;
         }
-        input {
+
+        #input {
             width: 100%;
-            background: none;
+            background: transparent;
             border: none;
             color: #00ff00;
             outline: none;
+            font-size: 16px;
+        }
+
+        #output {
+            white-space: pre;
         }
     </style>
 </head>
 <body>
-    <div id="terminal"></div>
-    <input id="input" type="text" autofocus placeholder="Type a command...">
-
-    <script src="/socket.io/socket.io.js"></script>
+    <div class="terminal">
+        <div id="output"></div>
+        <input type="text" id="input" autofocus />
+    </div>
     <script>
-        const socket = io();
-        const terminal = document.getElementById('terminal');
-        const input = document.getElementById('input');
+        const inputField = document.getElementById('input');
+        const outputDiv = document.getElementById('output');
 
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const command = input.value;
-                terminal.innerHTML += `> ${command}\n`;
-                input.value = '';
+        function addPrompt() {
+            outputDiv.innerHTML += 'user@infiniteedev -$ ';
+            inputField.value = '';
+        }
 
-                // Send command to the server
-                socket.emit('execute-command', command);
+        inputField.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                const command = inputField.value;
+                outputDiv.innerHTML += `${command}<br>`;
+                
+                // Simulate command execution
+                setTimeout(() => {
+                    outputDiv.innerHTML += `Command '${command}' executed.<br>`;
+                    addPrompt();
+                    outputDiv.scrollTop = outputDiv.scrollHeight; // Scroll to bottom
+                }, 500);
             }
         });
 
-        // Listen for command responses
-        socket.on('command-response', (output) => {
-            terminal.innerHTML += `${output}\n`;
-            terminal.scrollTop = terminal.scrollHeight; // Auto-scroll
-        });
+        // Initialize with prompt
+        addPrompt();
     </script>
 </body>
 </html>
