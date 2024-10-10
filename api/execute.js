@@ -1,7 +1,5 @@
 const { exec } = require('child_process');
 
-let outputHistory = [];
-
 export default function handler(req, res) {
     if (req.method === 'POST') {
         const command = req.body.command;
@@ -16,13 +14,12 @@ export default function handler(req, res) {
 
         // Check if the command is allowed
         if (!allowedCommands.some(cmd => command.startsWith(cmd))) {
-            return res.status(403).send('Command not allowed');
+            return res.status(403).send('Command not allowed\nuser@infinitee -$ ');
         }
 
         // Handle the 'clear' command
         if (command === 'clear') {
-            outputHistory = []; // Reset output history
-            return res.send('user@infinitee -$ '); // Return prompt after clearing
+            return res.send('user@infinitee -$ '); // Return just the prompt after clearing
         }
 
         // Execute the command
@@ -34,8 +31,7 @@ export default function handler(req, res) {
                 return res.status(500).send(`Stderr: ${stderr}\nuser@infinitee -$ `);
             }
 
-            outputHistory.push(stdout); // Store the output
-            res.send(stdout + '\nuser@infinitee -$ '); // Append prompt after output
+            res.send(stdout.trim() + '\nuser@infinitee -$ '); // Append prompt without extra lines
         });
     } else {
         res.setHeader('Allow', ['POST']);
