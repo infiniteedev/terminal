@@ -14,25 +14,28 @@ export default function handler(req, res) {
             'clear'
         ];
 
+        // Check if the command is allowed
         if (!allowedCommands.some(cmd => command.startsWith(cmd))) {
             return res.status(403).send('Command not allowed');
         }
 
+        // Handle the 'clear' command
         if (command === 'clear') {
-            outputHistory = []; // Reset the output history
-            return res.send(''); // Optionally return an empty response
+            outputHistory = []; // Reset output history
+            return res.send('user@infinitee -$ '); // Return prompt after clearing
         }
 
+        // Execute the command
         exec(command, (error, stdout, stderr) => {
             if (error) {
-                return res.status(500).send(`Error: ${error.message}`);
+                return res.status(500).send(`Error: ${error.message}\nuser@infinitee -$ `);
             }
             if (stderr) {
-                return res.status(500).send(`Stderr: ${stderr}`);
+                return res.status(500).send(`Stderr: ${stderr}\nuser@infinitee -$ `);
             }
 
             outputHistory.push(stdout); // Store the output
-            res.send(stdout);
+            res.send(stdout + '\nuser@infinitee -$ '); // Append prompt after output
         });
     } else {
         res.setHeader('Allow', ['POST']);
