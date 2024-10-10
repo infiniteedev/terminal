@@ -1,47 +1,49 @@
 const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
+const cors = require('cors');
 const { exec } = require('child_process');
-require('dotenv').config();
-const path = require('path');
-
 const app = express();
-const server = http.createServer(app);
-const io = socketIo(server);
+const PORT = process.env.PORT || 3000;
 
-// Serve static files from the root directory
-app.use(express.static(path.join(__dirname, '/')));
+app.use(cors());
+app.use(express.json());
 
-const allowedCommands = [
-    'ls', 'pwd', 'whoami', 'date', 'echo',
-    'apt update', 'apt upgrade', 'apt install',
-    // Add more commands as necessary
-];
+// Allowed commands
+const allowedCommands = {
+    'ls': true,
+    'pwd': true,
+    'mkdir': true,
+    'rm': true,
+    'apt': true, // Allow 'apt' commands with care
+};
 
-function isValidCommand(cmd) {
-    return allowedCommands.some(allowed => cmd.startsWith(allowed));
-}
+// Handle command execution
+app.post('/execute', (req, res) => {
+    const command = req.body.command;
+    
+    // Simple command validation
+    const [cmd, ...args] = command.split(' ');
+    
+    if (!(cmd in allowedCommands)) {
+        return res.json({ output: `Command '${cmd}' is not allowed.` });
+    }
 
-io.on('connection', (socket) => {
-    console.log('User connected');
-
-    socket.on('command', (cmd) => {
-        if (isValidCommand(cmd)) {
-            exec(cmd, { shell: '/bin/bash' }, (error, stdout, stderr) => {
-                const output = error ? stderr : stdout;
-                socket.emit('output', output.trim() || ''); // Emit trimmed output
-            });
-        } else {
-            socket.emit('output', 'Command not allowed');
+    // Only allow specific apt commands
+    if (cmd === 'apt') {
+        const subCommand = args[0];
+        if (!['update', 'upgrade', 'install', 'remove'].includes(subCommand)) {
+            return res.json({ output: `apt command '${subCommand}' is not allowed.` });
         }
-    });
+    }
 
-    socket.on('disconnect', () => {
-        console.log('User disconnected');
+    exec(command, (error, stdout, stderr) => {
+        if (error) {
+            return res.json({ output: `Error: ${stderr || error.message}` });
+        }
+        res.json({ output: stdout });
     });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+// Start the server
+app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
