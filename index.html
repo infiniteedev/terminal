@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skyport Webstore</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #000; /* Black background */
+            color: #fff; /* White text */
+            padding: 20px;
+        }
+        #console {
+            border: 1px solid #444;
+            padding: 10px;
+            height: 400px;
+            overflow-y: auto;
+            white-space: pre;
+            background-color: #1d1f21;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+        .prompt {
+            color: #8abeb7; /* Turquoise prompt */
+        }
+        input {
+            width: calc(100% - 20px);
+            padding: 5px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #444;
+            margin-top: 5px;
+            border-radius: 5px;
+        }
+        .command-output {
+            color: #b5bd68; /* Light green output */
+        }
+        a {
+            color: #81a2be; /* Link color */
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .item {
+            margin: 10px 0;
+        }
+        .item img {
+            width: 50px; /* Thumbnail size */
+            height: 50px;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Skyport Free Webstore</h1>
+<div id="console"></div>
+<input type="text" id="commandInput" placeholder="Type your command here..." autofocus />
+
+<script>
+    const items = {
+        addon1: { 
+            description: "Skyport Addon 1: Enhance your panel with new features.", 
+            link: "path/to/addon1.zip",
+            image: "path/to/addon1.jpg"
+        },
+        addon2: { 
+            description: "Skyport Addon 2: Optimize your workflow with this addon.", 
+            link: "path/to/addon2.zip", 
+            image: "path/to/addon2.jpg"
+        },
+        client1: { 
+            description: "Skyport Client 1: A powerful client for managing your services.", 
+            link: "path/to/client1.zip", 
+            image: "path/to/client1.jpg"
+        },
+        theme1: { 
+            description: "Skyport Theme 1: A sleek, modern theme for your panel.", 
+            link: "path/to/theme1.zip", 
+            image: "path/to/theme1.jpg"
+        }
+    };
+
+    const consoleDiv = document.getElementById('console');
+    const commandInput = document.getElementById('commandInput');
+
+    function displayMessage(message, isOutput = false) {
+        const className = isOutput ? 'command-output' : '';
+        consoleDiv.innerHTML += `<div class="${className}">${message}</div>`;
+        consoleDiv.scrollTop = consoleDiv.scrollHeight; // Scroll to bottom
+    }
+
+    function displayPrompt() {
+        const prompt = `shell@infiniteedev -$ `;
+        commandInput.value = ''; // Clear input
+        commandInput.focus();
+        displayMessage(prompt);
+    }
+
+    commandInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            const command = commandInput.value.trim();
+            handleCommand(command);
+            displayPrompt();
+        }
+    });
+
+    function handleCommand(command) {
+        switch (command) {
+            case 'list':
+                const itemList = Object.keys(items).map(item => {
+                    return `<div class="item">
+                        <img src="${items[item].image}" alt="${item}">
+                        ${item}: ${items[item].description}
+                    </div>`;
+                }).join('');
+                displayMessage("Available Items:\n" + itemList, true);
+                break;
+            case 'help':
+                const helpMessage = `
+Available Commands:
+- list: Display available items.
+- info <item_name>: Show details of an item.
+- clear: Clear the console.
+- discord: Join the Skyport Discord.
+- exit: Exit the webstore.
+- <item_name>: Acquire an item by its name.
+                `;
+                displayMessage(helpMessage, true);
+                break;
+            case 'clear':
+                consoleDiv.innerHTML = ''; // Clear console
+                displayPrompt();
+                break;
+            case 'discord':
+                displayMessage("Join the Skyport Discord: [discord.gg/fwc6ndDFfn](https://discord.gg/fwc6ndDFfn)", true);
+                break;
+            case 'exit':
+                displayMessage("Thank you for visiting the Skyport Webstore!", true);
+                commandInput.disabled = true; // Disable input
+                break;
+            default:
+                if (command.startsWith('info ')) {
+                    const itemName = command.split(' ')[1];
+                    if (items[itemName]) {
+                        const item = items[itemName];
+                        displayMessage(`${itemName}: ${item.description} \nImage: <img src="${item.image}" alt="${itemName} image" width="50" />`, true);
+                    } else {
+                        displayMessage("Item not found. Type 'list' to see available items.", true);
+                    }
+                } else if (items[command]) {
+                    displayMessage(`You have successfully acquired: ${command} - ${items[command].description} 
+                    [Download Here](<a href="${items[command].link}" download>${command}.zip</a>)`, true);
+                } else {
+                    displayMessage("Invalid command. Type 'help' for a list of commands.", true);
+                }
+                break;
+        }
+    }
+
+    displayPrompt(); // Initial prompt
+</script>
+
+</body>
+  </html>
+  
