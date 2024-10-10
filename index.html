@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulated VPS Terminal</title>
+    <title>Web Shell</title>
     <style>
         body {
             background-color: #000;
@@ -30,25 +30,27 @@
     <div id="terminal"></div>
     <input id="input" type="text" autofocus placeholder="Type a command...">
 
+    <script src="/socket.io/socket.io.js"></script>
     <script>
+        const socket = io();
         const terminal = document.getElementById('terminal');
         const input = document.getElementById('input');
 
-        input.addEventListener('keypress', async (e) => {
+        input.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 const command = input.value;
                 terminal.innerHTML += `> ${command}\n`;
                 input.value = '';
 
-                const response = await fetch('/execute', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ command })
-                });
-                const data = await response.json();
-                terminal.innerHTML += `${data.output}\n`;
-                terminal.scrollTop = terminal.scrollHeight; // Auto-scroll
+                // Send command to the server
+                socket.emit('execute-command', command);
             }
+        });
+
+        // Listen for command responses
+        socket.on('command-response', (output) => {
+            terminal.innerHTML += `${output}\n`;
+            terminal.scrollTop = terminal.scrollHeight; // Auto-scroll
         });
     </script>
 </body>
