@@ -87,7 +87,7 @@
 
             // Send command to the server
             try {
-                const response = await fetch('http://localhost:3000/execute', {
+                const response = await fetch('/api/execute', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -108,5 +108,7 @@
     });
 </script>
 
+</body>
+</html>
 </body>
 </html>
