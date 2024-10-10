@@ -19,31 +19,35 @@
             overflow-y: auto;
         }
 
+        .input-container {
+            display: flex; /* Flexbox to align prompt and input */
+        }
+
         #input {
-            width: calc(100% - 20px); /* Adjust width to fit the prompt */
+            width: 100%; /* Take full width available */
             background: transparent;
             border: none;
             color: #fff; /* White text for input */
             outline: none;
             font-size: 16px;
-            display: inline; /* Keep input inline */
         }
 
         #output {
             white-space: pre;
+            margin-bottom: 10px; /* Space for new input line */
         }
 
         .prompt {
-            color: #00f; /* Blue color for the prompt */
-            display: inline;
+            color: #00bfff; /* Light blue color for the prompt */
+            margin-right: 5px; /* Space between prompt and input */
         }
     </style>
 </head>
 <body>
     <div class="terminal">
         <div id="output"></div>
-        <div>
-            <span class="prompt">user@infiniteedev -$ </span>
+        <div class="input-container">
+            <span class="prompt">user@infiniteedev -$</span>
             <input type="text" id="input" autofocus />
         </div>
     </div>
@@ -54,7 +58,7 @@
         inputField.addEventListener('keypress', (event) => {
             if (event.key === 'Enter') {
                 const command = inputField.value;
-                outputDiv.innerHTML += `<span class="prompt">user@infiniteedev -$ </span>${command}<br>`;
+                outputDiv.innerHTML += `<span class="prompt">user@infiniteedev -$</span> ${command}<br>`;
                 
                 // Simulate command execution
                 setTimeout(() => {
