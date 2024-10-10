@@ -1,4 +1,5 @@
 const { exec } = require('child_process');
+const path = require('path');
 
 export default function handler(req, res) {
     if (req.method === 'POST') {
@@ -9,7 +10,8 @@ export default function handler(req, res) {
             'mkdir',
             'rm',
             'echo',
-            'clear'
+            'clear',
+            'cd'
         ];
 
         // Check if the command is allowed
@@ -22,8 +24,23 @@ export default function handler(req, res) {
             return res.send('user@infinitee -$ '); // Return just the prompt after clearing
         }
 
-        // Execute the command
-        exec(command, (error, stdout, stderr) => {
+        // Handle 'cd' command
+        if (command.startsWith('cd')) {
+            const dir = command.split(' ')[1];
+            if (!dir) {
+                return res.status(400).send('No directory specified\nuser@infinitee -$ ');
+            }
+
+            try {
+                process.chdir(dir);
+                return res.send(`Changed directory to ${process.cwd()}\nuser@infinitee -$ `);
+            } catch (err) {
+                return res.status(500).send(`Error: ${err.message}\nuser@infinitee -$ `);
+            }
+        }
+
+        // Execute other commands
+        exec(command, { cwd: process.cwd() }, (error, stdout, stderr) => {
             if (error) {
                 return res.status(500).send(`Error: ${error.message}\nuser@infinitee -$ `);
             }
