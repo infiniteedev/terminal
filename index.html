@@ -7,8 +7,8 @@
     <style>
         body {
             font-family: 'Courier New', Courier, monospace;
-            background-color: #2d2d2d;
-            color: #ffffff;
+            background-color: #000;
+            color: #00ff00;
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -19,31 +19,30 @@
             flex: 1;
             overflow-y: auto;
             padding: 10px;
-            border: 1px solid #555;
+            border: 1px solid #00ff00;
             background-color: #1e1e1e;
             border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
             font-size: 14px;
         }
         input {
             width: 100%;
-            color: #ffffff;
-            background: #333;
-            border: 1px solid #555;
+            color: #00ff00;
+            background: #1e1e1e;
+            border: 1px solid #00ff00;
             border-radius: 5px;
             padding: 10px;
             outline: none;
             font-size: 16px;
         }
         input:focus {
-            border-color: #00ff00;
-            background: #444;
+            border-color: #00cc00;
         }
         .command {
             font-weight: bold;
         }
         .prompt {
-            color: #00ff00;
+            display: inline;
         }
         .error {
             color: #ff0000;
@@ -55,7 +54,7 @@
 </head>
 <body>
     <div id="output"></div>
-    <div class="prompt">user@vps:~$</div>
+    <div class="prompt">user@vps:~$ </div>
     <input id="command" autofocus />
 
     <script src="/socket.io/socket.io.js"></script>
