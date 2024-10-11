@@ -50,9 +50,9 @@ export default function handler(req, res) {
 
             // Process output to remove unnecessary newlines
             const output = stdout.replace(/\n{2,}/g, '\n').trim(); // Remove multiple newlines
-            const response = output ? output + '\nuser@infinitee -$ ' : 'user@infinitee -$ ';
+            const response = output.length > 0 ? `${output}\n` : ''; // Only include output if present
 
-            res.send(response);
+            res.send(response + 'user@infinitee -$ '); // Append prompt at the end
         });
     } else {
         res.setHeader('Allow', ['POST']);
