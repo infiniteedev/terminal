@@ -57,7 +57,7 @@ app.post('/api/execute', (req, res) => {
         }
 
         const output = stdout.trim(); // Remove leading/trailing whitespace
-        res.send(output); // Send only the output
+        res.send(output); // Send output as plain text
     });
 });
 
