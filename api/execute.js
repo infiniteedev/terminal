@@ -1,67 +1,60 @@
-const express = require('express');
 const { exec } = require('child_process');
-const bodyParser = require('body-parser');
 const path = require('path');
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+export default function handler(req, res) {
+    if (req.method === 'POST') {
+        const command = req.body.command;
 
-// Middleware
-app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname))); // Serve static files from the root directory
+        const allowedCommands = [
+            'ls',
+            'mkdir',
+            'rm',
+            'echo',
+            'clear',
+            'cd'
+        ];
 
-app.post('/api/execute', (req, res) => {
-    const command = req.body.command;
+        // Check if the command is allowed
+        if (!allowedCommands.some(cmd => command.startsWith(cmd))) {
+            return res.status(403).send('Command not allowed');
+        }
 
-    const allowedCommands = [
-        'ls',
-        'mkdir',
-        'rm',
-        'echo',
-        'clear',
-        'cd'
-    ];
+        // Handle the 'clear' command
+        if (command === 'clear') {
+            return res.send({ clear: true }); // Indicate to clear the output
+        }
 
-    // Check if the command is allowed
-    if (!allowedCommands.some(cmd => command.startsWith(cmd))) {
-        return res.status(403).send('Command not allowed');
+        // Handle 'cd' command
+        if (command.startsWith('cd')) {
+            const dir = command.split(' ')[1];
+            if (!dir) {
+                return res.status(400).send('No directory specified');
+            }
+
+            try {
+                process.chdir(dir);
+                return res.send(`Changed directory to ${process.cwd()}`);
+            } catch (err) {
+                return res.status(500).send(`Error: ${err.message}`);
+            }
+        }
+
+        // Execute other commands
+        exec(command, { cwd: process.cwd() }, (error, stdout, stderr) => {
+            if (error) {
+                return res.status(500).send(`Error: ${error.message}`);
+            }
+            if (stderr) {
+                return res.status(500).send(`Stderr: ${stderr}`);
+            }
+
+            // Process output to remove unnecessary newlines
+            const output = stdout.trim(); // Remove leading/trailing whitespace
+
+            res.send(output); // Send only the output
+        });
+    } else {
+        res.setHeader('Allow', ['POST']);
+        res.status(405).end(`Method ${req.method} Not Allowed`);
     }
-
-    // Handle the 'clear' command
-    if (command === 'clear') {
-        return res.send({ clear: true }); // Indicate to clear the output
-    }
-
-    // Handle 'cd' command
-    if (command.startsWith('cd')) {
-        const dir = command.split(' ')[1];
-        if (!dir) {
-            return res.status(400).send('No directory specified');
-        }
-
-        try {
-            process.chdir(dir);
-            return res.send(`Changed directory to ${process.cwd()}`);
-        } catch (err) {
-            return res.status(500).send(`Error: ${err.message}`);
-        }
-    }
-
-    // Execute other commands
-    exec(command, { cwd: process.cwd() }, (error, stdout, stderr) => {
-        if (error) {
-            return res.status(500).send(`Error: ${error.message}`);
-        }
-        if (stderr) {
-            return res.status(500).send(`Stderr: ${stderr}`);
-        }
-
-        const output = stdout.trim(); // Remove leading/trailing whitespace
-        res.send(output); // Send output as plain text
-    });
-});
-
-// Start the server
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});
+}
