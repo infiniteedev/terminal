@@ -97,14 +97,18 @@
                     body: JSON.stringify({ command })
                 });
 
-                const result = await response.json();
+                const result = await response.text(); // Get response as plain text
 
-                if (result.clear) {
+                if (result.includes('Command not allowed') || result.includes('Error:')) {
+                    const errorLine = document.createElement('div');
+                    errorLine.textContent = result;
+                    terminal.insertBefore(errorLine, terminal.querySelector('.terminal-input'));
+                } else if (result.trim() === '{"clear":true}') {
                     // Clear the terminal content
                     terminal.innerHTML = '<div class="terminal-input"><span>user@infiniteedev -$</span><input type="text" id="commandInput" autofocus></div>';
                 } else {
                     const outputLine = document.createElement('div');
-                    outputLine.textContent = result;
+                    outputLine.textContent = result; // result is plain text
                     terminal.insertBefore(outputLine, terminal.querySelector('.terminal-input'));
                 }
             } catch (error) {
