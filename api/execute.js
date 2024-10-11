@@ -21,7 +21,7 @@ export default function handler(req, res) {
 
         // Handle the 'clear' command
         if (command === 'clear') {
-            return res.send('user@infinitee -$ '); // Return just the prompt after clearing
+            return res.send('\n\n\n\n\n\n\n\n\n\nuser@infinitee -$ '); // Simulate clearing the screen
         }
 
         // Handle 'cd' command
@@ -58,4 +58,4 @@ export default function handler(req, res) {
         res.setHeader('Allow', ['POST']);
         res.status(405).end(`Method ${req.method} Not Allowed`);
     }
-}
+        }
