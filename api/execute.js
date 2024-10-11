@@ -16,46 +16,45 @@ export default function handler(req, res) {
 
         // Check if the command is allowed
         if (!allowedCommands.some(cmd => command.startsWith(cmd))) {
-            return res.status(403).send('Command not allowed\nuser@infinitee -$ ');
+            return res.status(403).send('Command not allowed');
         }
 
         // Handle the 'clear' command
         if (command === 'clear') {
-            return res.send('\n\n\n\n\n\n\n\n\n\nuser@infinitee -$ '); // Simulate clearing the screen
+            return res.send(''); // Clear the output completely
         }
 
         // Handle 'cd' command
         if (command.startsWith('cd')) {
             const dir = command.split(' ')[1];
             if (!dir) {
-                return res.status(400).send('No directory specified\nuser@infinitee -$ ');
+                return res.status(400).send('No directory specified');
             }
 
             try {
                 process.chdir(dir);
-                return res.send(`Changed directory to ${process.cwd()}\nuser@infinitee -$ `);
+                return res.send(`Changed directory to ${process.cwd()}`);
             } catch (err) {
-                return res.status(500).send(`Error: ${err.message}\nuser@infinitee -$ `);
+                return res.status(500).send(`Error: ${err.message}`);
             }
         }
 
         // Execute other commands
         exec(command, { cwd: process.cwd() }, (error, stdout, stderr) => {
             if (error) {
-                return res.status(500).send(`Error: ${error.message}\nuser@infinitee -$ `);
+                return res.status(500).send(`Error: ${error.message}`);
             }
             if (stderr) {
-                return res.status(500).send(`Stderr: ${stderr}\nuser@infinitee -$ `);
+                return res.status(500).send(`Stderr: ${stderr}`);
             }
 
-            // Process output to remove unnecessary newlines
-            const output = stdout.replace(/\n{2,}/g, '\n').trim(); // Remove multiple newlines
-            const response = output.length > 0 ? `${output}\n` : ''; // Only include output if present
+            
+            const output = stdout.trim();
 
-            res.send(response + 'user@infinitee -$ '); // Append prompt at the end
+            res.send(output); 
         });
     } else {
         res.setHeader('Allow', ['POST']);
         res.status(405).end(`Method ${req.method} Not Allowed`);
     }
-        }
+}
