@@ -79,7 +79,9 @@
 
     input.addEventListener('keypress', async function(e) {
         if (e.key === 'Enter') {
-            const command = input.value;
+            const command = input.value.trim();
+            if (!command) return; // Ignore empty commands
+
             const newLine = document.createElement('div');
             newLine.textContent = 'user@infiniteedev -$ ' + command;
             terminal.insertBefore(newLine, terminal.querySelector('.terminal-input'));
@@ -95,10 +97,16 @@
                     body: JSON.stringify({ command })
                 });
 
-                const result = await response.text();
-                const outputLine = document.createElement('div');
-                outputLine.textContent = result;
-                terminal.insertBefore(outputLine, terminal.querySelector('.terminal-input'));
+                const result = await response.json();
+
+                if (result.clear) {
+                    // Clear the terminal content
+                    terminal.innerHTML = '<div class="terminal-input"><span>user@infiniteedev -$</span><input type="text" id="commandInput" autofocus></div>';
+                } else {
+                    const outputLine = document.createElement('div');
+                    outputLine.textContent = result;
+                    terminal.insertBefore(outputLine, terminal.querySelector('.terminal-input'));
+                }
             } catch (error) {
                 const errorLine = document.createElement('div');
                 errorLine.textContent = 'Error executing command: ' + error.message;
@@ -108,7 +116,5 @@
     });
 </script>
 
-</body>
-</html>
 </body>
 </html>
