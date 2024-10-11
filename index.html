@@ -104,8 +104,9 @@
                     errorLine.textContent = result;
                     terminal.insertBefore(errorLine, terminal.querySelector('.terminal-input'));
                 } else if (result.trim() === '{"clear":true}') {
-                    // Clear the terminal content
-                    terminal.innerHTML = '<div class="terminal-input"><span>user@infiniteedev -$</span><input type="text" id="commandInput" autofocus></div>';
+                    // Clear the terminal content while keeping the input intact
+                    const outputLines = terminal.querySelectorAll('div:not(.terminal-input)');
+                    outputLines.forEach(line => line.remove());
                 } else {
                     const outputLine = document.createElement('div');
                     outputLine.textContent = result; // result is plain text
