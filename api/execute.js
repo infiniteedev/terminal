@@ -21,7 +21,8 @@ export default function handler(req, res) {
 
         // Handle the 'clear' command
         if (command === 'clear') {
-            return res.send({ clear: true }); // Indicate to clear the output
+            // Simply return a message that output is cleared
+            return res.send({ clear: true });
         }
 
         // Handle 'cd' command
