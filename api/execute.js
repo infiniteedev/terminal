@@ -12,6 +12,9 @@ export default function handler(req, res) {
             'echo',
             'clear',
             'cd'
+            'apt upgrade'
+            'apt install'
+            'apt update'
         ];
 
         // Check if the command is allowed
