@@ -1,137 +1,126 @@
-const express = require('express');
-const { exec } = require('child_process');
-const session = require('express-session');
-const path = require('path');
-const fs = require('fs'); // File system module for handling file operations
-const app = express();
-
-// Middleware to parse JSON bodies
-app.use(express.json());
-
-// Set root directory for static files (for serving index.html and others)
-const rootDir = path.resolve(__dirname, '..'); // Go one directory up from 'api' folder
-
-// Serve static files (HTML, CSS, JS) from the root directory
-app.use(express.static(rootDir));
-
-// Session middleware configuration
-app.use(session({
-    secret: 'rizzler-cloud.online',
-    resave: false,
-    saveUninitialized: true,
-    cookie: { maxAge: 3600000 } // Session expires in 1 hour
-}));
-
-// Middleware to ensure session state
-app.use((req, res, next) => {
-    if (!req.session.currentDir) {
-        req.session.currentDir = process.cwd(); // Set initial directory
-    }
-    next();
-});
-
-// Command handler
-app.post('/terminal', (req, res) => {
-    const command = req.body.command.trim(); // Ensure command is trimmed
-
-    const allowedCommands = [
-        'ls', 'mkdir', 'rm', 'echo', 'clear', 'cd',
-        'touch', 'cat', 'chmod', 'cp', 'mv', 'rmdir',
-        'apt update', 'apt upgrade', 'apt install', 'apt remove',
-        'ps', 'kill', 'top', 'df', 'du', 'free',
-        'grep', 'find', 'ping', 'uname', 'whoami',
-        'pwd', 'history', 'man', 'which', 'locate',
-        'nano', 'less', 'head', 'tail', 'wget', 'curl'
-    ];
-
-    // Check if the command is allowed
-    if (!allowedCommands.some(cmd => command.startsWith(cmd))) {
-        return res.status(403).send('Command not allowed');
-    }
-
-    // Handle 'clear' command separately
-    if (command === 'clear') {
-        return res.send({ clear: true });
-    }
-
-    // Handle 'cd' command to change directories
-    if (command.startsWith('cd')) {
-        const dir = command.split(' ')[1];
-        if (!dir) {
-            return res.status(400).send('No directory specified');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InfiniteeDev Shell</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1e1e1e;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
+        .terminal {
+            width: 90%;
+            height: 85vh;
+            margin: 20px;
+            border-radius: 20px;
+            background-color: #2d2d2d;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            background-color: #3b3b3b;
+            padding: 15px;
+            border-bottom: 2px solid #444;
+        }
+        .dot { width: 15px; height: 15px; border-radius: 50%; margin-right: 10px; }
+        .dot.red { background-color: #ff5f56; }
+        .dot.yellow { background-color: #ffbd2e; }
+        .dot.green { background-color: #27c93f; }
+        .terminal-content {
+            flex-grow: 1;
+            padding: 20px;
+            color: #d1d1d1;
+            font-size: 16px;
+            line-height: 1.8;
+            white-space: pre-line;
+            overflow-y: auto;
+        }
+        .terminal-input {
+            display: flex;
+            align-items: center;
+            color: #00ff00;
+        }
+        .terminal-input span { margin-right: 8px; }
+        .terminal-input input {
+            background: none; border: none; color: #00ff00;
+            font-family: inherit; font-size: inherit; outline: none; flex-grow: 1;
+        }
+    </style>
+</head>
+<body>
 
-        try {
-            // Change session-based directory, not the global process directory
-            const newDir = path.resolve(req.session.currentDir, dir);
-            if (fs.existsSync(newDir) && fs.lstatSync(newDir).isDirectory()) {
-                req.session.currentDir = newDir;
-                return res.send(`Changed directory to ${newDir}`);
-            } else {
-                return res.status(404).send('Directory not found');
+<div class="terminal">
+    <div class="terminal-header">
+        <div class="dot red"></div>
+        <div class="dot yellow"></div>
+        <div class="dot green"></div>
+    </div>
+    <div class="terminal-content" id="terminal">
+        <div class="terminal-input">
+            <span>user@infiniteedev -$</span><input type="text" id="commandInput" autofocus>
+        </div>
+    </div>
+</div>
+
+<script>
+    const input = document.getElementById('commandInput');
+    const terminal = document.getElementById('terminal');
+
+    input.addEventListener('keypress', async function(e) {
+        if (e.key === 'Enter') {
+            const command = input.value.trim();
+            if (!command) return; // Ignore empty commands
+
+            const newLine = document.createElement('div');
+            newLine.textContent = 'user@infiniteedev -$ ' + command;
+            terminal.insertBefore(newLine, terminal.querySelector('.terminal-input'));
+            input.value = '';
+
+            // Send command to the server
+            try {
+                const response = await fetch('/api/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ command })
+                });
+
+                const result = await response.text(); // Get response as plain text
+
+                if (result.includes('Command not allowed') || result.includes('Error:')) {
+                    const errorLine = document.createElement('div');
+                    errorLine.textContent = result;
+                    terminal.insertBefore(errorLine, terminal.querySelector('.terminal-input'));
+                } else if (result.trim() === '{"clear":true}') {
+                    // Clear the terminal content while keeping the input intact
+                    const outputLines = terminal.querySelectorAll('div:not(.terminal-input)');
+                    outputLines.forEach(line => line.remove());
+                } else {
+                    const outputLine = document.createElement('div');
+                    outputLine.textContent = result; // result is plain text
+                    terminal.insertBefore(outputLine, terminal.querySelector('.terminal-input'));
+                }
+            } catch (error) {
+                const errorLine = document.createElement('div');
+                errorLine.textContent = 'Error executing command: ' + error.message;
+                terminal.insertBefore(errorLine, terminal.querySelector('.terminal-input'));
             }
-        } catch (err) {
-            return res.status(500).send(`Error: ${err.message}`);
         }
-    }
-
-    // Special handling for 'touch' and 'mkdir'
-    if (command.startsWith('touch')) {
-        const fileName = command.split(' ')[1];
-        if (!fileName) {
-            return res.status(400).send('No file name specified');
-        }
-
-        const filePath = path.join(req.session.currentDir, fileName);
-        // Create an empty file using fs
-        fs.writeFile(filePath, '', (err) => {
-            if (err) {
-                return res.status(500).send(`Error: ${err.message}`);
-            }
-            return res.send(`File ${fileName} created successfully`);
-        });
-        return;
-    }
-
-    if (command.startsWith('mkdir')) {
-        const dirName = command.split(' ')[1];
-        if (!dirName) {
-            return res.status(400).send('No directory name specified');
-        }
-
-        const dirPath = path.join(req.session.currentDir, dirName);
-        // Create directory using fs
-        fs.mkdir(dirPath, { recursive: true }, (err) => {
-            if (err) {
-                return res.status(500).send(`Error: ${err.message}`);
-            }
-            return res.send(`Directory ${dirName} created successfully`);
-        });
-        return;
-    }
-
-    // Execute other commands using the session's current directory
-    exec(command, { cwd: req.session.currentDir }, (error, stdout, stderr) => {
-        if (error) {
-            return res.status(500).send(`Error: ${error.message}`);
-        }
-        if (stderr) {
-            return res.status(500).send(`Stderr: ${stderr}`);
-        }
-
-        const output = stdout.trim();
-        res.send(output);
     });
-});
+</script>
 
-// Serve index.html when accessing the root
-app.get('/', (req, res) => {
-    res.sendFile(path.join(rootDir, 'index.html'));
-});
-
-// Start the server
-const PORT = 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
-        
+</body>
+</html>
+                
