@@ -1,14 +1,21 @@
 const express = require('express');
 const { exec } = require('child_process');
 const session = require('express-session');
+const path = require('path');
 const app = express();
 
 // Middleware to parse JSON bodies
 app.use(express.json());
 
+// Set root directory for static files (for serving index.html and others)
+const rootDir = path.resolve(__dirname, '..'); // Go one directory up from 'api' folder
+
+// Serve static files (HTML, CSS, JS) from the root directory
+app.use(express.static(rootDir));
+
 // Session middleware configuration
 app.use(session({
-    secret: 'rizzler-cloud.online', 
+    secret: 'rizzler-cloud.online',
     resave: false,
     saveUninitialized: true,
     cookie: { maxAge: 3600000 } // Session expires in 1 hour
@@ -76,14 +83,9 @@ app.post('/terminal', (req, res) => {
     });
 });
 
-// Ensure session resets on exit
-app.use((req, res, next) => {
-    res.on('finish', () => {
-        if (!req.session) {
-            req.session.destroy(); // Clear the session when the user leaves
-        }
-    });
-    next();
+// Serve index.html when accessing the root
+app.get('/', (req, res) => {
+    res.sendFile(path.join(rootDir, 'index.html'));
 });
 
 // Start the server
@@ -91,3 +93,4 @@ const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+        
