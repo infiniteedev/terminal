@@ -60,7 +60,7 @@
 </head>
 <body>
 
-<div class="terminal">
+<div class="terminal" onclick="focusInput()">
     <div class="terminal-header">
         <div class="dot red"></div>
         <div class="dot yellow"></div>
@@ -77,6 +77,16 @@
     const input = document.getElementById('commandInput');
     const terminal = document.getElementById('terminal');
 
+    // Focus on the input field when terminal is clicked
+    function focusInput() {
+        input.focus();
+    }
+
+    // Scroll terminal to the bottom
+    function scrollToBottom() {
+        terminal.scrollTop = terminal.scrollHeight;
+    }
+
     input.addEventListener('keypress', async function(e) {
         if (e.key === 'Enter') {
             const command = input.value.trim();
@@ -87,9 +97,12 @@
             terminal.insertBefore(newLine, terminal.querySelector('.terminal-input'));
             input.value = '';
 
+            // Scroll to the bottom after adding a new command
+            scrollToBottom();
+
             // Send command to the server
             try {
-                const response = await fetch('/api/execute', {
+                const response = await fetch('/terminal', { // Update API endpoint
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -112,13 +125,20 @@
                     outputLine.textContent = result; // result is plain text
                     terminal.insertBefore(outputLine, terminal.querySelector('.terminal-input'));
                 }
+
+                // Scroll to the bottom after receiving the result
+                scrollToBottom();
             } catch (error) {
                 const errorLine = document.createElement('div');
                 errorLine.textContent = 'Error executing command: ' + error.message;
                 terminal.insertBefore(errorLine, terminal.querySelector('.terminal-input'));
             }
+
+            // Ensure input stays focused
+            input.focus();
         }
     });
+
 </script>
 
 </body>
