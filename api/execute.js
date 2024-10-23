@@ -2,6 +2,7 @@ const express = require('express');
 const { exec } = require('child_process');
 const session = require('express-session');
 const path = require('path');
+const fs = require('fs'); // File system module for handling file operations
 const app = express();
 
 // Middleware to parse JSON bodies
@@ -29,9 +30,9 @@ app.use((req, res, next) => {
     next();
 });
 
-// Main command handler
+// Command handler
 app.post('/terminal', (req, res) => {
-    const command = req.body.command;
+    const command = req.body.command.trim(); // Ensure command is trimmed
 
     const allowedCommands = [
         'ls', 'mkdir', 'rm', 'echo', 'clear', 'cd',
@@ -62,11 +63,51 @@ app.post('/terminal', (req, res) => {
 
         try {
             // Change session-based directory, not the global process directory
-            req.session.currentDir = path.resolve(req.session.currentDir, dir);
-            return res.send(`Changed directory to ${req.session.currentDir}`);
+            const newDir = path.resolve(req.session.currentDir, dir);
+            if (fs.existsSync(newDir) && fs.lstatSync(newDir).isDirectory()) {
+                req.session.currentDir = newDir;
+                return res.send(`Changed directory to ${newDir}`);
+            } else {
+                return res.status(404).send('Directory not found');
+            }
         } catch (err) {
             return res.status(500).send(`Error: ${err.message}`);
         }
+    }
+
+    // Special handling for 'touch' and 'mkdir'
+    if (command.startsWith('touch')) {
+        const fileName = command.split(' ')[1];
+        if (!fileName) {
+            return res.status(400).send('No file name specified');
+        }
+
+        const filePath = path.join(req.session.currentDir, fileName);
+        // Create an empty file using fs
+        fs.writeFile(filePath, '', (err) => {
+            if (err) {
+                return res.status(500).send(`Error: ${err.message}`);
+            }
+            return res.send(`File ${fileName} created successfully`);
+        });
+        return;
+    }
+
+    if (command.startsWith('mkdir')) {
+        const dirName = command.split(' ')[1];
+        if (!dirName) {
+            return res.status(400).send('No directory name specified');
+        }
+
+        const dirPath = path.join(req.session.currentDir, dirName);
+        // Create directory using fs
+        fs.mkdir(dirPath, { recursive: true }, (err) => {
+            if (err) {
+                return res.status(500).send(`Error: ${err.message}`);
+            }
+            return res.send(`Directory ${dirName} created successfully`);
+        });
+        return;
     }
 
     // Execute other commands using the session's current directory
